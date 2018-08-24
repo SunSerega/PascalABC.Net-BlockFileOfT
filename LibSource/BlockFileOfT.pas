@@ -19,8 +19,8 @@ type
   ///  -Указатели
   ///  -Ссылочные типы (то есть все классы)
   ///
-  ///В будущих билдах ожидаются так же модули "BlockString", "BlockArray" и т.п.
-  ///содержащие соответствующие типы для работы с BlockFileOf
+  ///Исключение:
+  ///С помощью атрибутов можно заставить ссылочные типы передаваться по значению, тогда сработает
   BlockFileOf<T>=class
   where T: record;
     
@@ -40,31 +40,44 @@ type
     private function GetName:string;
     private function GetFullName:string;
     
-    private function GetFileSize:int64;
-    private procedure SetFileSize(size:int64);
+    private function GetExists:boolean;
+    
+    private function GetFileSize:int64 := GetByteFileSize div sz;
+    private procedure SetFileSize(size:int64) := SetByteFileSize(size * sz);
     
     private function GetByteFileSize:int64;
     private procedure SetByteFileSize(size:int64);
     
-    private function GetPos:int64;
-    private procedure SetPos(pos:int64);
+    private function GetPos:int64 := GetPosByte div sz;
+    private procedure SetPos(pos:int64) := SetPosByte(pos * sz);
     private function GetPosByte:int64;
     private procedure SetPosByte(pos:int64);
+    
+    private function InternalReadLazy(c:integer; start_pos:int64):sequence of T;
+    
+    ///Инициализирует переменную файла, не привязывая её к файлу на диске
+    public constructor := exit;
+    ///Инициализирует переменную файла, привязывая её к файлу fname
+    public constructor(fname:string) := Assign(fname);
     
     
     ///Размер блока из одного элемента типа T, в байтах
     public property TSize:integer read integer(sz);
+    
     ///Количество сохранённых в файл элементов типа T
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
     public property FileSize:int64 read GetFileSize write SetFileSize;
     ///Размер файла, в байтах
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
     public property FileByteSize:int64 read GetByteFileSize write SetByteFileSize;
-    ///Имя файла
+    ///Имя файла (только имя самого файла, без имени папки)
     public property Name:string read GetName;
-    ///Полное имя файла
+    ///Полное имя файла (вместе с именами всех под-папок, вплодь до корня диска)
     public property FullName:string read GetFullName;
+    ///Существует ли файл
+    public property Exists:boolean read GetExists;
     ///Возвращает номер текущего элемента в файле (нумеруя с 0)
+    
     public property Pos:int64 read GetPos write SetPos;
     ///Возвращает номер текущего байта в файле (нумеруя с 0)
     public property PosByte:int64 read GetPosByte write SetPosByte;
@@ -91,7 +104,9 @@ type
     ///Чтоб получить переменную этого типа - пишите System.IO.FileMode.<способ_открытия_файла>
     public procedure Open(mode:FileMode);
     ///Удаляет связаный файл, если он существует
-    public procedure Erase;
+    public procedure Erase := Delete;
+    ///Удаляет связаный файл, если он существует
+    public procedure Delete;
     ///Переименовывает файл
     ///Если указать другое расположение - файл будет перемещён
     public procedure Rename(NewName:string);
@@ -101,28 +116,26 @@ type
     ///Привязывает данную переменную к файлу {fname} и создает (или обнуляет) этот файл
     public procedure Rewrite(fname:string);
     
-    ///Открывает файл на чтение (ожидается, что он уже существует) и устанавливает позицию на начало файла
+    ///Открывает файл (ожидается, что он уже существует) и устанавливает позицию на начало файла
     public procedure Reset;
     ///Привязывает данную переменную к файлу {fname}, открывает этот файл на чтение (ожидается, что файл уже существует) и устанавливает позицию на начало файла
     public procedure Reset(fname:string);
     
-    ///Открывает файл на чтение (ожидается, что он уже существует) и устанавливает позицию в конце файла
+    ///Открывает файл (ожидается, что он уже существует) и устанавливает позицию в конце файла
     public procedure Append;
     ///Привязывает данную переменную к файлу {fname}, открывает этот файл на чтение (ожидается, что файл уже существует) и устанавливает позицию в конце файла
     public procedure Append(fname:string);
     
     ///Переставляет позицию в файле на элемент #pos (нумеруя с 0)
-    public procedure Seek(pos:int64);
+    public procedure Seek(pos:int64) := self.Pos := pos;
     ///Переставляет позицию в файле на байт #pos (нумеруя с 0)
-    public procedure SeekByte(pos:int64);
+    public procedure SeekByte(pos:int64) := self.PosByte := pos;
     ///Достигнут ли конец файла
     public function EOF := FileByteSize-PosByte < sz;
-    ///Существует ли файл
-    public function Exists := fi.Exists;
     
     ///Записывает все изменения в файл
     public procedure Flush;
-    ///Сохраняет и закрывает файл, если он был открыт
+    ///Сохраняет и закрывает файл, если он открыт
     public procedure Close;
     
     
@@ -134,15 +147,23 @@ type
     public procedure Write(o:ICollection<T>);
     ///Записывает последовательность элементов, у которой нельзя узнать длину, по 1 элементу типа T в файл
     public procedure Write(o:sequence of T);
+    ///Записывает count элементов массива, начиная с элемента #from, одним блоком в файл
+    public procedure Write(o:array of T; from,count:integer);
+    ///Записывает count элементов последовательности, у которой можно узнать длину, начиная с элемента #from, одним блоком в файл
+    public procedure Write(o:ICollection<T>; from,count:integer);
+    ///Записывает count элементов последовательности, у которой нельзя узнать длину, начиная с элемента #from, одним блоком в файл
+    public procedure Write(o:sequence of T; from,count:integer);
     
     ///Читает один элемент из файла одним блоком
     public function Read:T;
     ///Читает массив элементов из файла одним блоком
     public function Read(c:integer):array of T;
-    ///Возвращает ленивую последовательность
+    ///Возвращает ленивую последовательность из c элементов
     ///При попытке доступа к элементам этой последовательности - начнёт читать элементы из файла, по блоку на элемент типа T
-    public function ReadLazy(c:integer):sequence of T;
-    private function InternalReadLazy(c:integer; start_pos:int64):sequence of T;
+    public function ReadLazy(c:integer):sequence of T := InternalReadLazy(c,Pos);
+    ///Возвращает ленивую последовательность из всех элементов начиная данной позиции и до конца файла
+    ///При попытке доступа к элементам этой последовательности - начнёт читать элементы из файла, по блоку на элемент типа T
+    public function ReadLazy:sequence of T := InternalReadLazy(FileSize-Pos, Pos);
     
   end;
 
@@ -171,34 +192,28 @@ type
 function BlockFileOf<T>.GetName:string;
 begin
   if fi = nil then raise new FileNotAssignedException;
+  fi.Refresh;
   Result := fi.Name;
 end;
 
 function BlockFileOf<T>.GetFullName:string;
 begin
   if fi = nil then raise new FileNotAssignedException;
+  //fi.Refresh;//А тут не надо
   Result := fi.FullName;
 end;
 
 
 
-function BlockFileOf<T>.GetFileSize:int64;
-begin
-  if fi = nil then raise new FileNotAssignedException;
-  Result := fi.Length div sz;
-end;
-
-procedure BlockFileOf<T>.SetFileSize(size:int64);
-begin
-  if fi = nil then raise new FileNotAssignedException;
-  if str = nil then raise new FileNotOpenedException(fi.FullName);
-  str.SetLength(size*sz);
-end;
-
-
 function BlockFileOf<T>.GetByteFileSize:int64;
 begin
   if fi = nil then raise new FileNotAssignedException;
+  if str <> nil then
+  begin
+    Result := str.Length;
+    exit;
+  end;
+  fi.Refresh;
   Result := fi.Length;
 end;
 
@@ -209,21 +224,6 @@ begin
   str.SetLength(size);
 end;
 
-
-
-function BlockFileOf<T>.GetPos:int64;
-begin
-  if fi = nil then raise new FileNotAssignedException;
-  if str = nil then raise new FileNotOpenedException(fi.FullName);
-  Result := str.Position div sz;
-end;
-
-procedure BlockFileOf<T>.SetPos(pos:int64);
-begin
-  if fi = nil then raise new FileNotAssignedException;
-  if str = nil then raise new FileNotOpenedException(fi.FullName);
-  str.Position := pos*sz;
-end;
 
 
 function BlockFileOf<T>.GetPosByte:int64;
@@ -267,10 +267,17 @@ begin
   br := new BinaryReader(str);
 end;
 
-procedure BlockFileOf<T>.Erase;
+procedure BlockFileOf<T>.Delete;
 begin
   if fi = nil then raise new FileNotAssignedException;
   fi.Delete;
+end;
+
+function BlockFileOf<T>.GetExists:boolean;
+begin
+  if fi = nil then raise new FileNotAssignedException;
+  fi.Refresh;
+  Result := fi.Exists;
 end;
 
 procedure BlockFileOf<T>.Rename(NewName:string);
@@ -321,22 +328,6 @@ end;
 
 {$endregion Append}
 
-{$region Seek}
-
-procedure BlockFileOf<T>.Seek(pos:int64);
-begin
-  if str = nil then raise new FileNotOpenedException;
-  str.Position := pos*sz;
-end;
-
-procedure BlockFileOf<T>.SeekByte(pos:int64);
-begin
-  if str = nil then raise new FileNotOpenedException;
-  str.Position := pos;
-end;
-
-{$endregion Seek}
-
 {$region Closing}
 
 procedure BlockFileOf<T>.Flush;
@@ -365,6 +356,9 @@ end;
 
 procedure BlockFileOf<T>.Write(o: T);
 begin
+  if fi = nil then raise new FileNotAssignedException;
+  if str = nil then raise new FileNotOpenedException(fi.FullName);
+  
   var a := new byte[sz];
   var ptr:^T := pointer(@a[0]);
   ptr^ := o;
@@ -373,6 +367,9 @@ end;
 
 procedure BlockFileOf<T>.Write(params o:array of T);
 begin
+  if fi = nil then raise new FileNotAssignedException;
+  if str = nil then raise new FileNotOpenedException(fi.FullName);
+  
   var a := new byte[sz*o.Length];
   var ptr_id := integer(@a[0]);
   for var i := 0 to o.Length - 1 do
@@ -385,7 +382,17 @@ begin
 end;
 
 procedure BlockFileOf<T>.Write(o:ICollection<T>);
+type TArr = array of T;
 begin
+  if o is TArr(var a) then
+  begin
+    Write(a);
+    exit;
+  end;
+  
+  if fi = nil then raise new FileNotAssignedException;
+  if str = nil then raise new FileNotOpenedException(fi.FullName);
+  
   var a := new byte[sz*o.Count];
   var ptr_id := integer(@a[0]);
   foreach var el in o do
@@ -398,8 +405,59 @@ begin
 end;
 
 procedure BlockFileOf<T>.Write(o:sequence of T) :=
+if o is ICollection<T>(var c) then
+  Write(c) else
 foreach var el in o do
   Write(el);
+
+procedure BlockFileOf<T>.Write(o:array of T; from,count:integer);
+begin
+  if fi = nil then raise new FileNotAssignedException;
+  if str = nil then raise new FileNotOpenedException(fi.FullName);
+  
+  var a := new byte[sz*count];
+  var ptr_id := integer(@a[0]);
+  for var i := from to from+count - 1 do
+  begin
+    var ptr:^T := pointer(ptr_id);
+    ptr^ := o[i];
+    ptr_id += sz;
+  end;
+  bw.Write(a);
+end;
+
+procedure BlockFileOf<T>.Write(o:ICollection<T>; from,count:integer);
+type TArr = array of T;
+begin
+  if o is TArr(var a) then
+  begin
+    Write(a, from, count);
+    exit;
+  end;
+  
+  if fi = nil then raise new FileNotAssignedException;
+  if str = nil then raise new FileNotOpenedException(fi.FullName);
+  
+  var a := new byte[sz*o.Count];
+  var ptr_id := integer(@a[0]);
+  foreach var el in o do
+    if from > 0 then
+      from -= 1 else
+    if count > 0 then
+    begin
+      var ptr:^T := pointer(ptr_id);
+      ptr^ := el;
+      ptr_id += sz;
+      count -= 1;
+    end
+    else break;
+  bw.Write(a);
+end;
+
+procedure BlockFileOf<T>.Write(o:sequence of T; from,count:integer) :=
+if o is ICollection<T>(var c) then
+  Write(c,from,count) else
+  Write(o.Skip(from).Take(count));
 
 {$endregion Write}
 
@@ -407,6 +465,9 @@ foreach var el in o do
 
 function BlockFileOf<T>.Read:T;
 begin
+  if fi = nil then raise new FileNotAssignedException;
+  if str = nil then raise new FileNotOpenedException(fi.FullName);
+  
   var a := br.ReadBytes(sz);
   var ptr:^T := pointer(@a[0]);
   Result := ptr^;
@@ -414,6 +475,9 @@ end;
 
 function BlockFileOf<T>.Read(c:integer):array of T;
 begin
+  if fi = nil then raise new FileNotAssignedException;
+  if str = nil then raise new FileNotOpenedException(fi.FullName);
+  
   var a := br.ReadBytes(sz*c);
   Result := new T[c];
   var ptr_id := integer(@a[0]);
@@ -425,21 +489,16 @@ begin
   end;
 end;
 
-function BlockFileOf<T>.ReadLazy(c:integer):sequence of T :=
-InternalReadLazy(c,PosByte);
-
 function BlockFileOf<T>.InternalReadLazy(c:integer; start_pos:int64):sequence of T;
 begin
+  //if fi = nil then raise new FileNotAssignedException;
+  //if str = nil then raise new FileNotOpenedException(fi.FullName);
+  //PosByte всё сам проверяет ;)
+  
   PosByte := start_pos;
   loop c do
     yield Read;
 end;
-
-
-
-
-
-
 
 {$endregion Read}
 

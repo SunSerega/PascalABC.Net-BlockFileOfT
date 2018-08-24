@@ -39,7 +39,11 @@ try
   System.IO.Directory.EnumerateDirectories(path)
   .ForEach(procedure(dir)->(new System.Threading.Thread(()->TestAll(dir, ReadyPcu))).Start);
   
-  ReadyPcu.ForEach(fname->System.IO.File.Copy('Lib\'+fname,path+'\'+fname));
+  ReadyPcu.ForEach(fname->
+  begin
+    System.IO.File.Delete(path+'\'+fname);
+    System.IO.File.Copy('Lib\'+fname,path+'\'+fname);
+  end);
   
   System.IO.Directory.EnumerateFiles(path)
   .Where(fname->System.IO.Path.GetExtension(fname)='.pas')
@@ -64,7 +68,21 @@ try
     p.StartInfo.RedirectStandardError := true;
     p.Start;
     write(p.StandardError.ReadToEnd+#10*1);
-    p.WaitForExit//(1000);
+    (**
+    var normal_exit := false;
+    var i := 0;
+    while (i < 50) and not normal_exit do
+      if p.HasExited then
+        normal_exit := true else
+        Sleep(100);
+    if not normal_exit then
+    begin
+      writeln($'файл {fname} не завершился за 5 сек');
+      readln;
+    end;
+    (**)
+    p.WaitForExit;
+    
   except
     on e:Exception do
       write($'Error executing file {fname}{#10}{e}{#10}');
