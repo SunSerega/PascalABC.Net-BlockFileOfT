@@ -66,10 +66,16 @@ type
     
     ///Количество сохранённых в файл элементов типа T
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
-    public property FileSize:int64 read GetFileSize write SetFileSize;
+    public property Size:int64 read GetFileSize write SetFileSize;
     ///Размер файла, в байтах
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
-    public property FileByteSize:int64 read GetByteFileSize write SetByteFileSize;
+    public property ByteSize:int64 read GetByteFileSize write SetByteFileSize;
+    ///Количество сохранённых в файл элементов типа T
+    ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
+    public property FileSize:int64 read int64(Size) write Size := value;
+    ///Размер файла, в байтах
+    ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
+    public property FileByteSize:int64 read int64(ByteSize) write ByteSize := value;
     ///Имя файла (только имя самого файла, без имени папки)
     public property Name:string read GetName;
     ///Полное имя файла (вместе с именами всех под-папок, вплодь до корня диска)
@@ -78,8 +84,9 @@ type
     public property Exists:boolean read GetExists;
     ///Возвращает номер текущего элемента в файле (нумеруя с 0)
     
+    ///Номер текущего элемета типа T в файле (нумеруя с 0)
     public property Pos:int64 read GetPos write SetPos;
-    ///Возвращает номер текущего байта в файле (нумеруя с 0)
+    ///Номер текущего байта в файле (нумеруя с 0)
     public property PosByte:int64 read GetPosByte write SetPosByte;
     ///Основной поток открытого файла (или nil если файл не открыт)
     ///Внимание!!! Любое действие которое изменит этот поток - приведёт к неожиданным последствиям, используйте его только если знаете что делаете
@@ -133,7 +140,9 @@ type
     ///Достигнут ли конец файла
     public function EOF := FileByteSize-PosByte < sz;
     
-    ///Записывает все изменения в файл
+    ///Записывает все изменения в файл и отчищает внутренние буферы
+    ///До вызова Flush или Close - все изменения и кеш хранятся в оперативной памяти
+    ///Поэтому, если вы записываете/читаете много (сотни мегабайт) - лучше вызывать Flush время от времени
     public procedure Flush;
     ///Сохраняет и закрывает файл, если он открыт
     public procedure Close;
@@ -174,15 +183,19 @@ implementation
 type
   FileNotAssignedException = class(Exception)
     constructor :=
-    Create($'Данная переменная не была привязана к файлу{10}Используйте метод Assign');
+    inherited Create($'Данная переменная не была привязана к файлу{10}Используйте метод Assign');
   end;
   FileNotOpenedException = class(Exception)
     constructor(fname:string) :=
-    Create($'Файл {fname} ещё не открыт, откройте его с помощью Open, Reset или Append');
+    inherited Create($'Файл {fname} ещё не открыт, откройте его с помощью Open, Reset или Append');
   end;
   FileNotClosedException = class(Exception)
     constructor(fname:string) :=
-    Create($'Файл {fname} ещё открыт, закройте его методом Close перед тем как продолжать');
+    inherited Create($'Файл {fname} ещё открыт, закройте его методом Close перед тем как продолжать');
+  end;
+  CannotReadAfterEOF = class(Exception)
+    constructor :=
+    inherited Create($'Нельзя читать за пределами файла. Можно только записывать');
   end;
 
 {$endregion Exception's}
@@ -467,6 +480,7 @@ function BlockFileOf<T>.Read:T;
 begin
   if fi = nil then raise new FileNotAssignedException;
   if str = nil then raise new FileNotOpenedException(fi.FullName);
+  if str.Length - str.Position < sz then raise new CannotReadAfterEOF;
   
   var a := br.ReadBytes(sz);
   var ptr:^T := pointer(@a[0]);
@@ -477,6 +491,7 @@ function BlockFileOf<T>.Read(c:integer):array of T;
 begin
   if fi = nil then raise new FileNotAssignedException;
   if str = nil then raise new FileNotOpenedException(fi.FullName);
+  if str.Length - str.Position < sz*c then raise new CannotReadAfterEOF;
   
   var a := br.ReadBytes(sz*c);
   Result := new T[c];
@@ -492,10 +507,10 @@ end;
 function BlockFileOf<T>.InternalReadLazy(c:integer; start_pos:int64):sequence of T;
 begin
   //if fi = nil then raise new FileNotAssignedException;
-  //if str = nil then raise new FileNotOpenedException(fi.FullName);
-  //PosByte всё сам проверяет ;)
-  
+  //if str = nil then raise new FileNotOpenedException(fi.FullName);//PosByte сам проверяет ;)
   PosByte := start_pos;
+  if str.Length - start_pos < sz*c then raise new CannotReadAfterEOF;
+  
   loop c do
     yield Read;
 end;

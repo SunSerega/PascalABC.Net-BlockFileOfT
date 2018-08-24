@@ -1,3 +1,5 @@
 *.exe
-
+*.pcu
+*.pdb
 SWA
+temp.bin
