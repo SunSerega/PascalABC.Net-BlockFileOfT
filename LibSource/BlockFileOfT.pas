@@ -27,6 +27,7 @@ type
     private class sz: integer;
     
     private fi:FileInfo;
+    private _offset:int64;
     private str:FileStream;
     private bw:BinaryWriter;
     private br:BinaryReader;
@@ -42,14 +43,14 @@ type
     
     private function GetExists:boolean;
     
-    private function GetFileSize:int64 := GetByteFileSize div sz;
-    private procedure SetFileSize(size:int64) := SetByteFileSize(size * sz);
+    private function GetFileSize:int64 := (GetByteFileSize - _offset) div sz;
+    private procedure SetFileSize(size:int64) := SetByteFileSize(_offset + size*sz);
     
     private function GetByteFileSize:int64;
     private procedure SetByteFileSize(size:int64);
     
-    private function GetPos:int64 := GetPosByte div sz;
-    private procedure SetPos(pos:int64) := SetPosByte(pos * sz);
+    private function GetPos:int64 := (GetPosByte-_offset) div sz;
+    private procedure SetPos(pos:int64) := SetPosByte(_offset + pos*sz);
     private function GetPosByte:int64;
     private procedure SetPosByte(pos:int64);
     
@@ -59,21 +60,26 @@ type
     public constructor := exit;
     ///Инициализирует переменную файла, привязывая её к файлу fname
     public constructor(fname:string) := Assign(fname);
+    ///Инициализирует переменную файла, привязывая её к файлу fname
+    ///А так же устанавливая значение смещени от начала в байтах на offset
+    public constructor(fname:string; offset:int64) := Assign(fname, offset);
     
     
     ///Размер блока из одного элемента типа T, в байтах
     public property TSize:integer read integer(sz);
     
+    ///Смещение от начала файла до начала элементов
+    public property Offset:int64 read _offset write _offset;
     ///Количество сохранённых в файл элементов типа T
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
     public property Size:int64 read GetFileSize write SetFileSize;
-    ///Размер файла, в байтах
+    ///Полный размер файла, в байтах
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
     public property ByteSize:int64 read GetByteFileSize write SetByteFileSize;
     ///Количество сохранённых в файл элементов типа T
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
     public property FileSize:int64 read int64(Size) write Size := value;
-    ///Размер файла, в байтах
+    ///Полный размер файла, в байтах
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
     public property FileByteSize:int64 read int64(ByteSize) write ByteSize := value;
     ///Имя файла (только имя самого файла, без имени папки)
@@ -82,20 +88,19 @@ type
     public property FullName:string read GetFullName;
     ///Существует ли файл
     public property Exists:boolean read GetExists;
-    ///Возвращает номер текущего элемента в файле (нумеруя с 0)
     
     ///Номер текущего элемета типа T в файле (нумеруя с 0)
     public property Pos:int64 read GetPos write SetPos;
-    ///Номер текущего байта в файле (нумеруя с 0)
+    ///Номер текущего байта от начала файла (нумеруя с 0)
     public property PosByte:int64 read GetPosByte write SetPosByte;
     ///Основной поток открытого файла (или nil если файл не открыт)
-    ///Внимание!!! Любое действие которое изменит этот поток - приведёт к неожиданным последствиям, используйте его только если знаете что делаете
+    ///Внимание! Любое действие которое изменит этот поток - приведёт к неожиданным последствиям, используйте его только если знаете что делаете
     public property BaseStream:FileStream read str;
     ///Переменная, которая записывает данные в основной поток (или nil если файл не открыт)
-    ///Внимание!!! Любое действие которое изменит основной поток файла - приведёт к неожиданным последствиям, используйте его только если знаете что делаете
+    ///Внимание! Любое действие которое изменит основной поток файла - приведёт к неожиданным последствиям, используйте его только если знаете что делаете
     public property BinWriter:BinaryWriter read bw;
     ///Переменная, которая читает данные из основного потока (или nil если файл не открыт)
-    ///Внимание!!! Любое действие которое изменит основной поток файла - приведёт к неожиданным последствиям, используйте его только если знаете что делаете
+    ///Внимание! Любое действие которое изменит основной поток файла - приведёт к неожиданным последствиям, используйте его только если знаете что делаете
     public property BinReader:BinaryReader read br;
     ///Переменная, показывающая данные о файле (или nil, если переменная не привязана к файлу)
     public property FileInfo:System.IO.FileInfo read fi;
@@ -105,6 +110,10 @@ type
     ///Привязывает данную переменную к файлу {fname}
     ///Привязывать можно и к не существующим файлам, при откритии определёнными способами (как Rewrite) новый файл будет создан
     public procedure Assign(fname:string);
+    ///Привязывает данную переменную к файлу {fname}
+    ///А так же устанавливая значение смещени от начала в байтах на offset
+    ///Привязывать можно и к не существующим файлам, при откритии определёнными способами (как Rewrite) новый файл будет создан
+    public procedure Assign(fname:string; offset:int64);
     ///Убирает свять переменной и файла, если связь есть
     public procedure UnAssign;
     ///Открывает файл, способом описанным в переменной mode
@@ -122,20 +131,29 @@ type
     public procedure Rewrite;
     ///Привязывает данную переменную к файлу {fname} и создает (или обнуляет) этот файл
     public procedure Rewrite(fname:string);
+    ///Привязывает данную переменную к файлу {fname} и создает (или обнуляет) этот файл
+    ///А так же устанавливая значение смещени от начала в байтах на offset
+    public procedure Rewrite(fname:string; offset:int64);
     
     ///Открывает файл (ожидается, что он уже существует) и устанавливает позицию на начало файла
     public procedure Reset;
-    ///Привязывает данную переменную к файлу {fname}, открывает этот файл на чтение (ожидается, что файл уже существует) и устанавливает позицию на начало файла
+    ///Привязывает данную переменную к файлу {fname}, открывает этот файл (ожидается, что файл уже существует) и устанавливает позицию на начало файла
     public procedure Reset(fname:string);
+    ///Привязывает данную переменную к файлу {fname}, открывает этот файл (ожидается, что файл уже существует) и устанавливает позицию на начало файла
+    ///А так же устанавливая значение смещени от начала в байтах на offset
+    public procedure Reset(fname:string; offset:int64);
     
     ///Открывает файл (ожидается, что он уже существует) и устанавливает позицию в конце файла
     public procedure Append;
-    ///Привязывает данную переменную к файлу {fname}, открывает этот файл на чтение (ожидается, что файл уже существует) и устанавливает позицию в конце файла
+    ///Привязывает данную переменную к файлу {fname}, открывает этот файл (ожидается, что файл уже существует) и устанавливает позицию в конце файла
     public procedure Append(fname:string);
+    ///Привязывает данную переменную к файлу {fname}, открывает этот файл (ожидается, что файл уже существует) и устанавливает позицию в конце файла
+    ///А так же устанавливая значение смещени от начала в байтах на offset
+    public procedure Append(fname:string; offset:int64);
     
     ///Переставляет позицию в файле на элемент #pos (нумеруя с 0)
     public procedure Seek(pos:int64) := self.Pos := pos;
-    ///Переставляет позицию в файле на байт #pos (нумеруя с 0)
+    ///Переставляет файловый курсор на байт #pos (нумеруя с 0) от начала файла 
     public procedure SeekByte(pos:int64) := self.PosByte := pos;
     ///Достигнут ли конец файла
     public function EOF := FileByteSize-PosByte < sz;
@@ -149,29 +167,44 @@ type
     
     
     ///Записывает один элемент одним блоком в файл
+    ///И переставляет файловый курсор на 1 элемет вперёд
     public procedure Write(o: T);
     ///Записывает массив элементов одним блоком в файл
+    ///И переставляет файловый курсор на o.Length элеметов вперёд
     public procedure Write(params o:array of T);
     ///Записывает последовательность элементов, у которой можно узнать длину, одним блоком в файл
+    ///И переставляет файловый курсор на o.Count элеметов вперёд
     public procedure Write(o:ICollection<T>);
     ///Записывает последовательность элементов, у которой нельзя узнать длину, по 1 элементу типа T в файл
+    ///И переставляет файловый курсор на o.Count элеметов вперёд
     public procedure Write(o:sequence of T);
     ///Записывает count элементов массива, начиная с элемента #from, одним блоком в файл
+    ///И переставляет файловый курсор на сount элеметов вперёд
     public procedure Write(o:array of T; from,count:integer);
     ///Записывает count элементов последовательности, у которой можно узнать длину, начиная с элемента #from, одним блоком в файл
+    ///И переставляет файловый курсор на сount элеметов вперёд
     public procedure Write(o:ICollection<T>; from,count:integer);
     ///Записывает count элементов последовательности, у которой нельзя узнать длину, начиная с элемента #from, одним блоком в файл
+    ///И после каждого элемента переставляет файловый курсор на 1 элемет вперёд
     public procedure Write(o:sequence of T; from,count:integer);
     
     ///Читает один элемент из файла одним блоком
+    ///И переставляет файловый курсор на 1 элемет вперёд
     public function Read:T;
     ///Читает массив элементов из файла одним блоком
+    ///И переставляет файловый курсор на с элеметов вперёд
     public function Read(c:integer):array of T;
     ///Возвращает ленивую последовательность из c элементов
     ///При попытке доступа к элементам этой последовательности - начнёт читать элементы из файла, по блоку на элемент типа T
+    ///После завершения чтения - курсор окажется c элеметов после позиции начала чтения
+    ///Можно прочитать несколько раз - каждый раз чтение будет начинаться из одинаковой точки
+    ///Изменения файла или позиции курсора между чтением элеметов приведёт к неожиданным последствиям
     public function ReadLazy(c:integer):sequence of T := InternalReadLazy(c,Pos);
     ///Возвращает ленивую последовательность из всех элементов начиная данной позиции и до конца файла
     ///При попытке доступа к элементам этой последовательности - начнёт читать элементы из файла, по блоку на элемент типа T
+    ///После завершения чтения - курсор окажется в конце файла
+    ///Можно прочитать несколько раз - каждый раз чтение будет начинаться из одинаковой точки
+    ///Изменения файла или позиции курсора между чтением элеметов приведёт к неожиданным последствиям
     public function ReadLazy:sequence of T := InternalReadLazy(FileSize-Pos, Pos);
     
   end;
@@ -265,6 +298,12 @@ begin
   fi := new System.IO.FileInfo(fname);
 end;
 
+procedure BlockFileOf<T>.Assign(fname:string; offset:int64);
+begin
+  Assign(fname);
+  _offset := offset;
+end;
+
 procedure BlockFileOf<T>.UnAssign;
 begin
   if str <> nil then raise new FileNotClosedException(fi.FullName);
@@ -313,6 +352,12 @@ begin
   Rewrite;
 end;
 
+procedure BlockFileOf<T>.Rewrite(fname:string; offset:int64);
+begin
+  Assign(fname, offset);
+  Rewrite;
+end;
+
 {$endregion Rewrite}
 
 {$region Reset}
@@ -326,6 +371,12 @@ begin
   Reset;
 end;
 
+procedure BlockFileOf<T>.Reset(fname:string; offset:int64);
+begin
+  Assign(fname, offset);
+  Reset;
+end;
+
 {$endregion Reset}
 
 {$region Append}
@@ -336,6 +387,12 @@ Open(FileMode.Append);
 procedure BlockFileOf<T>.Append(fname:string);
 begin
   Assign(fname);
+  Append;
+end;
+
+procedure BlockFileOf<T>.Append(fname:string; offset:int64);
+begin
+  Assign(fname, offset);
   Append;
 end;
 

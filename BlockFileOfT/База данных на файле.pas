@@ -36,15 +36,15 @@ type
       var sb := new StringBuilder;
       
       sb.AppendFormat(
-        'DataUnit(DataT: {0}, ',
+        'DataUnit(DataT: {0,8}, ',
         System.Enum.GetName(typeof(DataType), DataT)
       );
       
       case DataType(DataT) of
-        ByteData: sb.AppendFormat('Byte Data: {0})',DataT1.b);
-        IntData : sb.AppendFormat('Int  Data: {0})',DataT2.i);
-        CharData: sb.AppendFormat('Char Data: {0})',DataT3.ch);
-        RealData: sb.AppendFormat('Real Data: {0})',DataT4.r);
+        ByteData: sb.AppendFormat('{0})',DataT1.b);
+        IntData : sb.AppendFormat('{0})',DataT2.i);
+        CharData: sb.AppendFormat('{0})',DataT3.ch);
+        RealData: sb.AppendFormat('{0})',DataT4.r);
         else raise new System.FormatException($'Не правильный тип данных: {DataT}');
       end;
       
