@@ -1,4 +1,4 @@
-1. [Лицензия/License](https://github.com/SunSerega/PascalABC.Net-BlockFileOfT/blob/master/LICENSE)
+1. [Лицензия/License](https://github.com/SunSerega/PascalABC.Net-BlockFileOfT/blob/master/LICENSE.md)
 
 2. Как добавить в репозиторий паскаля:\
 \

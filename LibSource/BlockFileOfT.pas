@@ -1,17 +1,14 @@
-﻿
-(***************************************************************************)
-(*                                                                         *)
-(*                       License/Лицензия:                                 *)
-(*                                                                         *)
-(* EN: Copy/Chandge/Do whatever with this module                           *)
-(* You do not need to credit me, but if you want - i'm here:               *)
-(* https://github.com/SunSerega                                            *)
-(*                                                                         *)
-(* RU: Копируйте/Изменяйте/Делайте что угодно с этим модулем               *)
-(* Вам не обязательно указывать меня как автора, но если хотите - я здесь: *)
-(* https://github.com/SunSerega                                            *)
-(*                                                                         *)
-(***************************************************************************)
+﻿(************************************************************************************)
+// Copyright (©) Cergey Latchenko ( github.com/SunSerega )
+// This code is distributed under the Unlicense
+// For details please see LICENSE.md or here:
+// https://github.com/SunSerega/PascalABC.Net-BlockFileOfT/blob/master/LICENSE.md
+(************************************************************************************)
+// Copyright (©) Сергей латченко ( github.com/SunSerega )
+// Этот код распространяется под Unlicense
+// Для деталей смотрите в файл LICENSE.md или сюда:
+// https://github.com/SunSerega/PascalABC.Net-BlockFileOfT/blob/master/LICENSE.md
+(************************************************************************************)
 
 unit BlockFileOfT;
 
