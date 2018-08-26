@@ -1,4 +1,19 @@
-﻿unit BlockFileOfT;
+﻿
+(***************************************************************************)
+(*                                                                         *)
+(*                       License/Лицензия:                                 *)
+(*                                                                         *)
+(* EN: Copy/Chandge/Do whatever with this module                           *)
+(* You do not need to credit me, but if you want - i'm here:               *)
+(* https://github.com/SunSerega                                            *)
+(*                                                                         *)
+(* RU: Копируйте/Изменяйте/Делайте что угодно с этим модулем               *)
+(* Вам не обязательно указывать меня как автора, но если хотите - я здесь: *)
+(* https://github.com/SunSerega                                            *)
+(*                                                                         *)
+(***************************************************************************)
+
+unit BlockFileOfT;
 
 interface
 
