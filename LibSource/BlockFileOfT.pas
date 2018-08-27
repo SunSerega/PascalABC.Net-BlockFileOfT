@@ -1,16 +1,4 @@
-﻿(************************************************************************************)
-// Copyright (©) Cergey Latchenko ( github.com/SunSerega )
-// This code is distributed under the Unlicense
-// For details please see LICENSE.md or here:
-// https://github.com/SunSerega/PascalABC.Net-BlockFileOfT/blob/master/LICENSE.md
-(************************************************************************************)
-// Copyright (©) Сергей латченко ( github.com/SunSerega )
-// Этот код распространяется под Unlicense
-// Для деталей смотрите в файл LICENSE.md или сюда:
-// https://github.com/SunSerega/PascalABC.Net-BlockFileOfT/blob/master/LICENSE.md
-(************************************************************************************)
-
-unit BlockFileOfT;
+﻿unit BlockFileOfT;
 
 interface
 
@@ -82,6 +70,8 @@ type
     
     ///Смещение от начала файла до начала элементов
     public property Offset:int64 read _offset write _offset;
+    ///Открыт ли файл
+    public property Opened:boolean read str <> nil;
     ///Количество сохранённых в файл элементов типа T
     ///Чтоб установить длину файла - надо открыть файл. Но прочитать длину можно не открывая
     public property Size:int64 read GetFileSize write SetFileSize;
