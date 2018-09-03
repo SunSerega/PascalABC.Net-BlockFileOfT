@@ -95,11 +95,16 @@ begin
     //EndRead;
     
     //StartRead;
-    //test_arr_copy := f.ReadLazy.ToArray;
+    //test_arr_copy := f.ToSeq.ToArray;
+    //EndRead;
+    
+    //StartRead;
+    //test_arr_copy := f.ToSeqBlocks.SelectMany(a->a).ToArray;
     //EndRead;
     
   end;
   
   writeln('ToDo: Test\General\test sequence - #1098');
+  writeln('ToDo: Test\General\test sequence - #new');
   
 end.

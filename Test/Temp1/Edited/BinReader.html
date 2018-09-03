@@ -1,0 +1,72 @@
+
+<html>
+
+	<head>
+		 <style type="text/css">
+		   .code_block {
+			background: #c0c0c0;
+			padding: 5px;
+			padding-right: 20px; 
+			border: solid 1px black; 
+		   }
+		 </style>
+		 
+		<script type="text/javascript">
+			function toggle_show(id) {
+				document.getElementById(id).style.display = document.getElementById(id).style.display == 'none' ? 'block' : 'none';
+			}
+		</script>
+	</head>
+
+
+
+	<body>
+		<font size="3"><a href="./index.html"><=</a></font><br>
+		<br>
+		
+		<p onClick="toggle_show('list')"><font size="4" color="008000" style="cursor: pointer"><u>Список разделов</u></font>
+			<ul id="list" style="display: none">
+				<li><font size="5"><a href="#code">Описание</a></font></li>
+				<li><font size="5"><a href="#exmpl">Примеры</a></font></li>
+				<li><font size="5"><a href="#remr">Примечания</a></font></li>
+			</ul>
+		</p>
+		<hr />
+		<p id="code">
+			<font size="5"><a href="#code">Описание:</a></font><br>
+			<p class="code_block">
+					122:<t style="margin-left: 05px">    ///Переменная, которая читает данные из основного потока (или nil если файл не открыт)</t>
+				<br>123:<t style="margin-left: 05px">    ///Внимание! Любое действие которое изменит основной поток файла - приведёт к неожиданным последствиям, используйте его только если знаете что делаете		</t>
+				<br>124:<t style="margin-left: 05px">    public property BinReader:BinaryReader read br;		</t>
+			</p>
+			<p onClick="toggle_show('impl')"><font size="5" color="008000" style="cursor: pointer"><u>Реализация</u></font>
+				<p class="code_block" id = "impl" style="display: none">
+						000:<t style="margin-left: 05px">																				</t>
+					<br>000:<t style="margin-left: 05px">																				</t>
+					<br>000:<t style="margin-left: 05px">																				</t>
+				</p>
+			</p>
+		</p>
+		<hr />
+		<p id="exmpl">
+			<font size="5"><a href="#exmpl">Примеры:</a></font><br>
+			<p class="code_block">
+					<t style="margin-left: 00px">uses BlockFileOfT;																	</t>
+				<br><t style="margin-left: 00px">																					</t>
+				<br><t style="margin-left: 00px">																					</t>
+			</p>
+		</p>
+		<hr />
+		<p id="remr">
+			<font size="5"><a href="#remr">Примечания:</a></font><br>
+			
+			<p class="code_block">
+					<t style="margin-left: 00px">uses BlockFileOfT;																	</t>
+				<br><t style="margin-left: 00px">																					</t>
+				<br><t style="margin-left: 00px">																					</t>
+			</p>
+			
+		</p>
+	</body>
+
+</html>

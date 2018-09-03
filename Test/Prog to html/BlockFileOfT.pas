@@ -21,23 +21,6 @@ uses System.Runtime.InteropServices;
 uses System.IO;
 
 type
-  ///--
-  BlockFileBase = abstract class
-    
-    protected fi:FileInfo;
-    protected _offset:int64;
-    protected str:FileStream;
-    protected bw:BinaryWriter;
-    protected br:BinaryReader;
-    
-    protected linked := new List<BlockFileBase>;
-    
-    protected procedure Link(f:BlockFileBase);
-    
-    protected procedure UnLink;
-    
-  end;
-  
   ///Тип, записывающий данные в файл по принципу схожему с "file of <T>"
   ///Но в отличии от "file of <T>" - данный тип сохраняет всю запись одним блоком,
   ///так, как она записа в памяти.
@@ -50,10 +33,16 @@ type
   ///Это значит, что поля записи T и всех вложенных записей - НЕ могут быть:
   ///  -Указатели
   ///  -Ссылочные типы (то есть все классы)
-  BlockFileOf<T>=class(BlockFileBase)
+  BlockFileOf<T>=class
   //where T: record;//ToDo вернуть когда исправят issue с елдами+where
     
     private class sz: integer;
+    
+    private fi:FileInfo;
+    private _offset:int64;
+    private str:FileStream;
+    private bw:BinaryWriter;
+    private br:BinaryReader;
     
     
     private class constructor :=
@@ -95,21 +84,10 @@ type
     ///А так же устанавливая значение смещени от начала в байтах на offset
     public constructor(fname:string; offset:int64) :=
     Assign(fname, offset);
-    ///- constructor BlockFileOf<>(f:BlockFileOf<>);
-    ///Инициализирует новую переменную, создавая связку данной переменной
-    ///После вызова этого конструктора - переданная и созданная переменная будут
-    ///использовать общий файловый поток, но записывать разные типы данных (у них может быть разный T)
-    ///Это значит, что переменная которую передали в конструктор должно уже иметь открытый файловый поток
-    ///Метод Close разрывает эту связь.
-    public constructor(f: BlockFileBase) :=
-    Link(f);
     
     
     ///Размер блока из одного элемента типа T, в байтах
-    ///Хоть это свойство и можно перезаписывать, но это не рекомендуется
-    ///Если перезаписать на число, большее чем было - в файл будет сохранять лишние нули
-    ///А если на меньшее - получите неопределённое поведение (скорее всего вылет, но далеко не сразу)
-    public property TSize:integer read integer(sz) write sz := value;
+    public property TSize:integer read integer(sz);
     
     ///Смещение от начала файла до начала элементов (в байтах)
     public property Offset:int64 read _offset write _offset;
@@ -256,12 +234,9 @@ type
     ///После прочтения i элементов последовательности - позиция в файле будет передвигаться на элемент #i
     public function ToSeq:sequence of T;
     
-    protected procedure Finalize; override;
-    begin
-      Close;
-    end;
-    
   end;
+
+implementation
 
 {$region Exception's}
 
@@ -284,40 +259,6 @@ type
   end;
 
 {$endregion Exception's}
-
-implementation
-
-{$region Linking}
-
-procedure BlockFileBase.Link(f:BlockFileBase);
-begin
-  
-  if f.str = nil then raise new FileNotOpenedException($'{f.fi.FullName}, чью переменную передали в конструктор,');
-  
-  foreach var l in f.linked + f do
-  begin
-    self.linked.Add(l);
-    l.linked.Add(self);
-  end;
-  
-  self.str := f.str;
-  self.br := f.br;
-  self.bw := f.bw;
-  self.fi := new FileInfo(f.fi.FullName);
-  
-end;
-
-procedure BlockFileBase.UnLink;
-begin
-  
-  foreach var l in self.linked do
-    l.linked.Remove(self);
-  
-  self.linked.Clear;
-  
-end;
-
-{$endregion Linking}
 
 {$region property implementation}
 
@@ -497,9 +438,7 @@ procedure BlockFileOf<T>.Close;
 begin
   if str <> nil then
   begin
-    if linked.Count <> 0 then
-      UnLink else
-      str.Close;
+    str.Close;
     str := nil;
     br := nil;
     bw := nil;

@@ -164,8 +164,8 @@ type
       sb += $'Database Type: {DatabaseType}{#10}';
       sb += $'Data:[{#10}';
       
-      Data.InnerFile.Pos := 0;
-      foreach var du in Data.InnerFile.Read(Data.InnerFile.Size) do
+      BlockFile.Pos := 0;
+      foreach var du in BlockFile.Read(BlockFile.Size) do
         sb += $'{#9}{du}{#10}';
       
       sb += $']';

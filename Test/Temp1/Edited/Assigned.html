@@ -1,0 +1,65 @@
+
+<html>
+
+	<head>
+		 <style type="text/css">
+		   .code_block {
+			background: #c0c0c0;
+			padding: 5px;
+			padding-right: 20px; 
+			border: solid 1px black; 
+		   }
+		 </style>
+		 
+		<script type="text/javascript">
+			function toggle_show(id) {
+				document.getElementById(id).style.display = document.getElementById(id).style.display == 'none' ? 'block' : 'none';
+			}
+		</script>
+	</head>
+
+
+
+	<body>
+		<font size="3"><a href="./index.html"><=</a></font><br>
+		<br>
+		
+		<p onClick="toggle_show('list')"><font size="4" color="008000" style="cursor: pointer"><u>Список разделов</u></font>
+			<ul id="list" style="display: none">
+				<li><font size="5"><a href="#code">Описание</a></font></li>
+				<li><font size="5"><a href="#exmpl">Примеры</a></font></li>
+				<li><font size="5"><a href="#remr">Примечания</a></font></li>
+			</ul>
+		</p>
+		<hr />
+		<p id="code">
+			<font size="5"><a href="#code">Описание:</a></font><br>
+			<p class="code_block">
+					110:<t style="margin-left: 05px">    ///Привязана ли переменная к файлу</t>
+				<br>111:<t style="margin-left: 05px">    public property Assigned:boolean read fi <> nil;						</t>
+			</p>
+		</p>
+		<hr />
+		<p id="exmpl">
+			<font size="5"><a href="#exmpl">Примеры:</a></font><br>
+			<p class="code_block">
+					<t style="margin-left: 00px">uses BlockFileOfT;																</t>
+				<br><t style="margin-left: 00px">																				</t>
+				<br><t style="margin-left: 00px">begin																			</t>
+				<br><t style="margin-left: 10px">var f := new .<a href="create().html">BlockFileOf</a>&ltbyte>;					</t>
+				<br><t style="margin-left: 10px">Writeln(f.Assigned);//False													</t>
+				<br><t style="margin-left: 10px">f.<a href="Assign(string fname).html">Assign</a>('temp.bin');					</t>
+				<br><t style="margin-left: 10px">Writeln(f.Assigned);//True														</t>
+				<br><t style="margin-left: 00px">end.																			</t>
+
+			</p>
+		</p>
+		<hr />
+		<p id="remr">
+			<font size="5"><a href="#remr">Примечания:</a></font><br>
+			Данное свойство показывает, была ли переменная привязана к файлу. Его значение можно только прочитать, но не записать.
+			Привязывать к файлу можно методом "Assign", а отвязывать методом "UnAssign".
+		</p>
+	</body>
+
+</html>

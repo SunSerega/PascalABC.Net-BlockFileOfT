@@ -1,0 +1,94 @@
+
+<html>
+
+	<head>
+		 <style type="text/css">
+		   .code_block {
+			background: #c0c0c0;
+			padding: 5px;
+			padding-right: 20px; 
+			border: solid 1px black; 
+		   }
+		 </style>
+		 
+		<script type="text/javascript">
+			function toggle_show(id) {
+				document.getElementById(id).style.display = document.getElementById(id).style.display == 'none' ? 'block' : 'none';
+			}
+		</script>
+	</head>
+
+
+
+	<body>
+		<font size="3"><a href="./index.html"><=</a></font><br>
+		<br>
+		
+		<p onClick="toggle_show('list')"><font size="4" color="008000" style="cursor: pointer"><u>Список разделов</u></font>
+			<ul id="list" style="display: none">
+				<li><font size="5"><a href="#code">Описание</a></font></li>
+				<li><font size="5"><a href="#params">Параметры</a></font></li>
+				<li><font size="5"><a href="#exmpl">Примеры</a></font></li>
+				<li><font size="5"><a href="#remr">Примечания</a></font></li>
+			</ul>
+		</p>
+		<hr />
+		<p id="code">
+			<font size="5"><a href="#code">Описание:</a></font><br>
+			<p class="code_block">
+					083:<t style="margin-left: 05px">///Инициализирует переменную файла, привязывая её к файлу fname				</t>
+				<br>084:<t style="margin-left: 05px">///А так же устанавливая значение смещени от начала в байтах на offset			</t>
+				<br>085:<t style="margin-left: 05px">public constructor(fname:string; offset:int64) :=								</t>
+				<br>086:<t style="margin-left: 05px"><a href="Assign(string fname int64 offset)">Assign</a>(fname, offset);			</t>
+			</p>
+		</p>
+		<hr />
+		<p id="params">
+			<font size="5"><a href="#params">Параметры:</a></font><br>
+			<p class=code_block>
+				fname: string
+			</p>
+			Задаёт имя файла, к которому будет привязан созданный экзепляр.
+			<p class=code_block>
+				offset: int64
+			</p>
+			Задаёт cмещение в байтах от начала файла до начала элементов
+		</p>
+		<hr />
+		<p id="exmpl">
+			<font size="5"><a href="#exmpl">Примеры:</a></font><br>
+			<p class="code_block">
+					<t style="margin-left: 00px">uses BlockFileOfT;																	</t>
+				<br><t style="margin-left: 00px">																					</t>
+				<br><t style="margin-left: 00px">begin																				</t>
+				<br><t style="margin-left: 10px">  var f: BlockFileOf&ltbyte>;														</t>
+				<br><t style="margin-left: 10px">  f := new BlockFileOf&ltbyte>(temp.bin, 5);										</t>
+				<br><t style="margin-left: 00px">end.																				</t>
+			</p>
+			<p class="code_block">
+					<t style="margin-left: 00px">uses BlockFileOfT;																	</t>
+				<br><t style="margin-left: 00px">																					</t>
+				<br><t style="margin-left: 00px">begin																				</t>
+				<br><t style="margin-left: 10px">  var f := new BlockFileOf&ltbyte>(temp.bin, 5);									</t>
+				<br><t style="margin-left: 00px">end.																				</t>
+			</p>
+			<p class="code_block">
+					<t style="margin-left: 00px">uses BlockFileOfT;																	</t>
+				<br><t style="margin-left: 00px">																					</t>
+				<br><t style="margin-left: 00px">begin																				</t>
+				<br><t style="margin-left: 10px">  var f := BlockFileOf&&ltbyte>.Create(temp.bin, 5);								</t>
+				<br><t style="margin-left: 00px">end.																				</t>
+			</p>
+		</p>
+		<hr />
+		<p id="remr">
+			<font size="5"><a href="#remr">Примечания:</a></font><br>
+			<a href="create().html#remr">Зачем нужны конструкторы</a><br>
+			<a href="../Start/WhyOffset.html">Зачем нужен offset</a><br>
+			<br>
+			Привязку к файлу и смещение можно будет в любой момент изменить.<br>
+			Но если вызывать этот конструктор, вместо пустого+Assign+Offset - надо меньше кода.
+		</p>
+	</body>
+
+</html>
