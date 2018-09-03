@@ -23,8 +23,8 @@ begin
   f.Close;
   
   Assert(f.Exists);
-  Assert(f.FileSize=1);
-  Assert(f.FileByteSize=sizeof(r1));
+  Assert(f.Size=1);
+  Assert(f.ByteSize=sizeof(r1));
   
   f.Reset;
   Assert(f.Pos=0);

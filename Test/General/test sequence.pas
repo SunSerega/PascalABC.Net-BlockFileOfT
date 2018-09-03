@@ -39,8 +39,8 @@ begin
     f.Close;
     
     Assert(f.Exists);
-    Assert(f.FileSize = 1024);
-    Assert(f.FileByteSize = 1024*sizeof(r1));
+    Assert(f.Size = 1024);
+    Assert(f.ByteSize = 1024*sizeof(r1));
     
     var test_arr_copy:array of r1;
     var StartRead:procedure := ()->
