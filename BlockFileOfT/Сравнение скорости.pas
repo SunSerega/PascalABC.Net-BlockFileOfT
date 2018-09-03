@@ -121,10 +121,10 @@ type
     
     class function GetRandom:IOR;
     begin
-      Result.s := new string(ArrGen(Random(256),i->char(Random(word.MaxValue))));
+      Result.s := new string(ArrGen(Random(256),i->ChrAnsi(Random(byte.MaxValue))));
       //Result.dt := System.DateTime.Now.AddTicks(Round((Random*2-1)*1024*1024*1024*1024));
       Result.i := (Random(word.MaxValue) shl 16) + Random(word.MaxValue);
-      Result.ch := char(Random(word.MaxValue));
+      Result.ch := ChrAnsi(Random(byte.MaxValue));
       Result.b := Random(256);
     end;
     
@@ -210,8 +210,9 @@ procedure TestSpeed;
 begin
   
   var sw := new System.Diagnostics.Stopwatch;//точнее чем этим замерить невозможно
-  var lc := 1000;
-  var ec := 100;
+  var lc := 10;
+  var ec := 10000;//Чем больше элементов - тем больше преимущество BlockFileOf<T>, потому что он сохраняет их всех сразу.
+                  //Но он быстрее даже если сохранять по 1 элементу
   var t1, t2: int64;
   
   var f1: file of AR;
@@ -260,11 +261,6 @@ begin
 end;
 
 begin//Уберите флажок "Debug версия" в сервис>>настройки>>опции компиляции и запускайте по Shift+F9, иначе не честно
-  
-  writeln('сейчас это не работает из за #1142');
-  writeln('https://github.com/pascalabcnet/pascalabcnet/issues/1142');
-  readln;
-  exit;
   
   TestIntegrity;//можно закомментировать
   
