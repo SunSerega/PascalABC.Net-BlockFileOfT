@@ -36,6 +36,9 @@ type
     
     protected procedure UnLink;
     
+    private class function MessageBox(wnd: System.IntPtr; message, caption: string; flags: cardinal):integer; 
+    external 'User32.dll';
+    
   end;
   
   ///Тип, записывающий данные в файл по принципу схожему с "file of <T>"
@@ -55,16 +58,43 @@ type
     
     private class sz: integer;
     
+    private class procedure TestForRefT(tt: System.Type);
+    begin
+      if tt.IsClass then
+      begin
+        MessageBox(new System.IntPtr(nil),
+          $'Тип {tt} ссылочный.{#10}Ссылочные типы нельзя сохранять в типизированный файл.{#10}Нажмите OK для выхода.',
+          'Тип T содержет ссылочные типы',
+          $10
+        );
+        Halt(-1);
+      end;
+      foreach var fi in
+      tt.GetFields(
+        System.Reflection.BindingFlags.GetField or
+        System.Reflection.BindingFlags.Instance or
+        System.Reflection.BindingFlags.Public or
+        System.Reflection.BindingFlags.NonPublic
+      ) do
+        if not fi.IsLiteral then
+          if fi.FieldType <> tt then//integer имеет поле типа integer, без этой строчки StackOwerflow
+            TestForRefT(fi.FieldType);
+    end;
     
     private class constructor :=
     try
+      TestForRefT(typeof(T));
+      
       sz := Marshal.SizeOf(typeof(T));
     except
       on e:Exception do
       begin
-        writeln(e);
-        readln;
-        halt;
+        MessageBox(new System.IntPtr(nil),
+          e.ToString,
+          $'При инициализации BlockFileOf<{typeof(T)}> произошла ошибка',
+          $10
+        );
+        Halt(-1);
       end;
     end;
     
