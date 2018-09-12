@@ -23,11 +23,84 @@
 	<body>
 		<font size="3"><a href="../Справка.html"><=</a></font><br>
 		<br>
-		<font size="5">Сохранение ссылочных типов в блочный файл.</font><br>
+		<font size="5">Сохранение ссылочных и особых типов в блочный файл.</font><br>
 		<hr />
 		
 		
-		<p onClick="toggle_show('decl')"><font size="4" color="008000" style="cursor: pointer">В чём проблема</font></p>
+		<p onClick="toggle_show('decl')"><font size="4" color="008000" style="cursor: pointer">В чём проблема особых типов</font></p>
+		<div id=decl style="display: none">
+			<p class=code_block>
+					<t style="margin-left: 00px">uses BlockFileOfT;		</t>
+				<br><t style="margin-left: 00px">		</t>
+				<br><t style="margin-left: 00px">type		</t>
+				<br><t style="margin-left: 10px">r1=record		</t>
+				<br><t style="margin-left: 20px">ch: char;		</t>
+				<br><t style="margin-left: 20px">constructor(ch: char) :=		</t>
+				<br><t style="margin-left: 20px">self.ch := ch;		</t>
+				<br><t style="margin-left: 10px">end;		</t>
+				<br><t style="margin-left: 00px">		</t>
+				<br><t style="margin-left: 00px">begin		</t>
+				<br><t style="margin-left: 10px">var f := new BlockFileOf&ltr1>('temp.bin');		</t>
+				<br><t style="margin-left: 10px">f.Rewrite;		</t>
+				<br><t style="margin-left: 10px">f.Write(new r1('a'));		</t>
+				<br><t style="margin-left: 10px">f.Write(new r1('b'),new r1('c'));//Ошибка: Объект содержит данные, которые не являются примитивами или требуют преобразования.		</t>
+				<br><t style="margin-left: 10px">f.Close;		</t>
+				<br><t style="margin-left: 00px">end.		</t>
+			</p>
+			Тут второе Write вызовет ошибку описаную выше.<br>
+			Это потому - что во второй Write передаётся array of r1.<br>
+			Когда для копирования памяти из этого массива в массив байт запрашивается блокировка памяти -<br>
+			.Net видит что r1 содержит поле типа - char. Я так и не нашёл однозначного определения что с ним не так.<br>
+			Но, вроде, проблема в том - что в разных системах и версиях char может по разному хранится в памяти.<br>
+			И эта ошибка - защита от дурака, чтоб не дать данные из 1 системы скопировать в другую.<br>
+			<br>
+			char - не единственный такой "особый тип"<br>
+			если получаете такую же ошибку - вы можете воспользоваться следующим способом обхода:<br>
+			<br>
+			<p class=code_block>
+					<t style="margin-left: 00px">uses BlockFileOfT;		</t>
+				<br><t style="margin-left: 00px">uses System.Runtime.InteropServices;		</t>
+				<br><t style="margin-left: 00px">		</t>
+				<br><t style="margin-left: 00px">type		</t>
+				<br><t style="margin-left: 10px">[StructLayout(LayoutKind.&Explicit)]		</t>
+				<br><t style="margin-left: 10px">CWConv = record		</t>
+				<br><t style="margin-left: 20px">[FieldOffset(0)] ch:char;//У обоих этих полей одинаковая позиция в памяти (0 байт от начала записси)		</t>
+				<br><t style="margin-left: 20px">[FieldOffset(0)] id:word;//Поэтому можно записать в 1 поле, а считать из другого, не теряя информацию		</t>
+				<br><t style="margin-left: 10px">end;		</t>
+				<br><t style="margin-left: 10px">r1=record		</t>
+				<br><t style="margin-left: 20px">ch: word;		</t>
+				<br><t style="margin-left: 20px">constructor(ch: char) :=		</t>
+				<br><t style="margin-left: 20px">begin		</t>
+				<br><t style="margin-left: 30px">var a: CWConv;		</t>
+				<br><t style="margin-left: 30px">a.ch := ch;		</t>
+				<br><t style="margin-left: 30px">self.ch := a.id;		</t>
+				<br><t style="margin-left: 20px">end;		</t>
+				<br><t style="margin-left: 20px">function GetCh:char;		</t>
+				<br><t style="margin-left: 20px">begin		</t>
+				<br><t style="margin-left: 30px">var a: CWConv;		</t>
+				<br><t style="margin-left: 30px">a.id := self.ch;		</t>
+				<br><t style="margin-left: 30px">Result := a.ch;		</t>
+				<br><t style="margin-left: 20px">end;		</t>
+				<br><t style="margin-left: 10px">end;		</t>
+				<br><t style="margin-left: 00px">		</t>
+				<br><t style="margin-left: 00px">begin		</t>
+				<br><t style="margin-left: 10px">var f := new BlockFileOf&ltr1>('temp.bin');		</t>
+				<br><t style="margin-left: 10px">f.Rewrite;		</t>
+				<br><t style="margin-left: 10px">f.Write(new r1('a'));		</t>
+				<br><t style="margin-left: 10px">f.Write(new r1('b'),new r1('c'));//Ошибка: Объект содержит данные, которые не являются примитивами или требуют преобразования.		</t>
+				<br><t style="margin-left: 10px">f.Close;		</t>
+				<br><t style="margin-left: 00px">end.		</t>
+			</p>
+			Тип word занимает в памяти 2 байта, так же как char, поэтому char можно заменить на word.<br>
+			Узнать объём типа можно вызвав sizeof(word), sizeof(char) и т.д.<br>
+			Конечно, в данном случае создавать CWConv не обязательно, потому что word(ch) и char(id) и без того работает.<br>
+			Но с другими особыми типами это может не сработать.<br>
+			<hr />
+		</div>
+		
+		
+		
+		<p onClick="toggle_show('decl')"><font size="4" color="008000" style="cursor: pointer">В чём проблема ссылочных типов</font></p>
 		<div id=decl style="display: none">
 			<p class=code_block>
 					<t style="margin-left: 00px">type		</t>

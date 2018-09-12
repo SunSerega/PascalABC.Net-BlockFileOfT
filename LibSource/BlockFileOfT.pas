@@ -52,9 +52,10 @@ type
   ///Иначе целостность данных будет терятся
   ///Это значит, что поля записи T и всех вложенных записей - НЕ могут быть:
   ///  -Указатели
-  ///  -Ссылочные типы (то есть все классы)
+  ///  -Ссылочных типов (то есть классами)
+  ///  -Особых типов, которые .Net считает "опасными". Как char или System.DateTime
+  ///Но эти ограничение можно обойти, про это в справке
   BlockFileOf<T>=class(BlockFileBase)
-  //where T: record;//ToDo вернуть когда исправят issue с елдами+where
     
     private class sz: integer;
     
@@ -64,7 +65,7 @@ type
       begin
         MessageBox(new System.IntPtr(nil),
           $'Тип {tt} ссылочный.{#10}Ссылочные типы нельзя сохранять в типизированный файл.{#10}Нажмите OK для выхода.',
-          'Тип T содержет ссылочные типы',
+          $'Тип T из BlockFileOf<T> содержет ссылочные типы',
           $10
         );
         Halt(-1);
@@ -84,6 +85,23 @@ type
     private class constructor :=
     try
       TestForRefT(typeof(T));
+      
+      (*
+      try
+        var a := new T[0];
+        GCHandle.Alloc(a,GCHandleType.Pinned).Free;
+      except
+        on e: System.ArgumentException do
+        begin
+          MessageBox(new System.IntPtr(nil),
+            $'.Net не принимает какой то из типов полей записи, для которой вы создали BlockFileOf<T>{#10}Говорит - его нельзя превратить в набор байт{#10}Нажмите OK для выхода.',
+            $'Тип T содержет ссылочные типы',
+            $10
+          );
+          Halt(-1);
+        end;
+      end;
+      (**)
       
       sz := Marshal.SizeOf(typeof(T));
     except
@@ -302,7 +320,7 @@ type
   end;
   FileNotOpenedException = class(Exception)
     constructor(fname:string) :=
-    inherited Create($'Файл {fname} ещё не открыт, откройте его с помощью Open, Reset или Append');
+    inherited Create($'Файл {fname} ещё не открыт, откройте его с помощью Open, Reset, Append или Rewrite');
   end;
   FileNotClosedException = class(Exception)
     constructor(fname:string) :=
@@ -322,7 +340,7 @@ implementation
 procedure BlockFileBase.Link(f:BlockFileBase);
 begin
   
-  if f.str = nil then raise new FileNotOpenedException($'{f.fi.FullName}, чью переменную передали в конструктор,');
+  if f.str = nil then raise new FileNotOpenedException($'{f.fi.FullName}, чью переменную передали в конструктор BlockFileOf<T>,');
   
   foreach var l in f.linked + f do
   begin
@@ -546,10 +564,14 @@ procedure BlockFileOf<T>.Write(o: T);
 begin
   if fi = nil then raise new FileNotAssignedException;
   if str = nil then raise new FileNotOpenedException(fi.FullName);
-  
   var a := new byte[sz];
-  var ptr:^T := pointer(@a[0]);
-  ptr^ := o;
+  var gc_hnd := GCHandle.Alloc(a, GCHandleType.Pinned);
+  System.Buffer.MemoryCopy(
+    @o,
+    gc_hnd.AddrOfPinnedObject.ToPointer,
+    sz,sz
+  );
+  gc_hnd.Free;
   bw.Write(a);
 end;
 
@@ -558,14 +580,17 @@ begin
   if fi = nil then raise new FileNotAssignedException;
   if str = nil then raise new FileNotOpenedException(fi.FullName);
   
-  var a := new byte[sz*o.Length];
-  var ptr_id := integer(@a[0]);
-  for var i := 0 to o.Length - 1 do
-  begin
-    var ptr:^T := pointer(ptr_id);
-    ptr^ := o[i];
-    ptr_id += sz;
-  end;
+  var bl := sz*o.Length;
+  var a := new byte[bl];
+  var gc_hnd1 := GCHandle.Alloc(o, GCHandleType.Pinned);
+  var gc_hnd2 := GCHandle.Alloc(a, GCHandleType.Pinned);
+  System.Buffer.MemoryCopy(
+    gc_hnd1.AddrOfPinnedObject.ToPointer,
+    gc_hnd2.AddrOfPinnedObject.ToPointer,
+    bl,bl
+  );
+  gc_hnd1.Free;
+  gc_hnd2.Free;
   bw.Write(a);
 end;
 
@@ -582,13 +607,18 @@ begin
   if str = nil then raise new FileNotOpenedException(fi.FullName);
   
   var a := new byte[sz*o.Count];
-  var ptr_id := integer(@a[0]);
+  var gc_hnd := GCHandle.Alloc(a, GCHandleType.Pinned);
+  var hnd := gc_hnd.AddrOfPinnedObject;
   foreach var el in o do
   begin
-    var ptr:^T := pointer(ptr_id);
-    ptr^ := el;
-    ptr_id += sz;
+    System.Buffer.MemoryCopy(
+      @el,
+      hnd.ToPointer,
+      sz,sz
+    );
+    System.IntPtr.Add(hnd, sz);
   end;
+  gc_hnd.Free;
   bw.Write(a);
 end;
 
@@ -603,14 +633,17 @@ begin
   if fi = nil then raise new FileNotAssignedException;
   if str = nil then raise new FileNotOpenedException(fi.FullName);
   
-  var a := new byte[sz*count];
-  var ptr_id := integer(@a[0]);
-  for var i := from to from+count - 1 do
-  begin
-    var ptr:^T := pointer(ptr_id);
-    ptr^ := o[i];
-    ptr_id += sz;
-  end;
+  var bl := sz*count;
+  var a := new byte[bl];
+  var gc_hnd1 := GCHandle.Alloc(o, GCHandleType.Pinned);
+  var gc_hnd2 := GCHandle.Alloc(a, GCHandleType.Pinned);
+  System.Buffer.MemoryCopy(
+    System.IntPtr.Add(gc_hnd1.AddrOfPinnedObject, from * sz).ToPointer,
+    gc_hnd2.AddrOfPinnedObject.ToPointer,
+    bl,bl
+  );
+  gc_hnd1.Free;
+  gc_hnd2.Free;
   bw.Write(a);
 end;
 
@@ -627,18 +660,21 @@ begin
   if str = nil then raise new FileNotOpenedException(fi.FullName);
   
   var a := new byte[sz*o.Count];
-  var ptr_id := integer(@a[0]);
+  var gc_hnd := GCHandle.Alloc(a, GCHandleType.Pinned);
+  var hnd := gc_hnd.AddrOfPinnedObject;
   foreach var el in o do
-    if from > 0 then
-      from -= 1 else
+    if from > 0 then from -= 1 else
     if count > 0 then
     begin
-      var ptr:^T := pointer(ptr_id);
-      ptr^ := el;
-      ptr_id += sz;
+      System.Buffer.MemoryCopy(
+        @el,
+        hnd.ToPointer,
+        sz,sz
+      );
+      hnd := System.IntPtr.Add(hnd, sz);
       count -= 1;
-    end
-    else break;
+    end;
+  gc_hnd.Free;
   bw.Write(a);
 end;
 
@@ -658,8 +694,13 @@ begin
   if str.Length - str.Position < sz then raise new CannotReadAfterEOF;
   
   var a := br.ReadBytes(sz);
-  var ptr:^T := pointer(@a[0]);
-  Result := ptr^;
+  var gc_hnd := GCHandle.Alloc(a, GCHandleType.Pinned);
+  System.Buffer.MemoryCopy(
+    gc_hnd.AddrOfPinnedObject.ToPointer,
+    @Result,
+    sz,sz
+  );
+  gc_hnd.Free;
 end;
 
 function BlockFileOf<T>.Read(count:integer):array of T;
@@ -668,15 +709,18 @@ begin
   if str = nil then raise new FileNotOpenedException(fi.FullName);
   if str.Length - str.Position < sz*count then raise new CannotReadAfterEOF;
   
-  var a := br.ReadBytes(sz*count);
+  var bl := sz*count;
+  var a := br.ReadBytes(bl);
   Result := new T[count];
-  var ptr_id := integer(@a[0]);
-  for var i := 0 to count - 1 do
-  begin
-    var ptr:^T := pointer(ptr_id);
-    Result[i] := ptr^;
-    ptr_id += sz;
-  end;
+  var gc_hnd1 := GCHandle.Alloc(a, GCHandleType.Pinned);
+  var gc_hnd2 := GCHandle.Alloc(Result, GCHandleType.Pinned);
+  System.Buffer.MemoryCopy(
+    gc_hnd1.AddrOfPinnedObject.ToPointer,
+    gc_hnd2.AddrOfPinnedObject.ToPointer,
+    bl,bl
+  );
+  gc_hnd1.Free;
+  gc_hnd2.Free;
 end;
 
 function BlockFileOf<T>.Read(start_elm, count:integer):array of T;
