@@ -90,24 +90,18 @@ begin
     f.Close;
     Assert(test_arr.SequenceEqual(test_arr_copy));
     
-    //ToDo #1098
-    //StartRead;
-    //test_arr_copy := f.ReadLazy(1024).ToArray;
-    //EndRead;
+    StartRead;
+    test_arr_copy := f.ReadLazy(1024).ToArray;
+    EndRead;
     
-    //ToDo #1098
-    //StartRead;
-    //test_arr_copy := f.ToSeq.ToArray;
-    //EndRead;
+    StartRead;
+    test_arr_copy := f.ToSeq.ToArray;
+    EndRead;
     
-    //ToDo #1127
-    //StartRead;
-    //test_arr_copy := f.ToSeqBlocks.SelectMany(a->a).ToArray;
-    //EndRead;
+    StartRead;
+    test_arr_copy := f.ToSeqBlocks.SelectMany(a->a).ToArray;
+    EndRead;
     
   end;
-  
-  writeln('ToDo: Test\General\test sequence - #1098');
-  writeln('ToDo: Test\General\test sequence - #1127');
   
 end.
