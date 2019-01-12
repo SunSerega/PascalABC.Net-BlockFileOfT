@@ -24,20 +24,19 @@ type
   ///--
   BlockFileBase = abstract class
     
-    protected fi:FileInfo;
-    protected _offset:int64;
-    protected str:FileStream;
-    protected bw:BinaryWriter;
-    protected br:BinaryReader;
+    protected fi: FileInfo;
+    protected _offset: int64;
+    protected str: FileStream;
+    protected bw: BinaryWriter;
+    protected br: BinaryReader;
     
     protected linked := new List<BlockFileBase>;
     
-    protected procedure Link(f:BlockFileBase);
+    protected procedure Link(f: BlockFileBase);
     
     protected procedure UnLink;
     
-    private class function MessageBox(wnd: System.IntPtr; message, caption: string; flags: cardinal):integer; 
-    external 'User32.dll';
+    private static function MessageBox(wnd: System.IntPtr; message, caption: string; flags: cardinal): integer; external 'User32.dll';
     
   end;
   
@@ -45,17 +44,16 @@ type
   ///Но, в отличии от типизированных файлов, данный тип сохраняет всю запись одним блоком так, как она записа в памяти.
   ///Это даёт значительное преимущество по скорости, но ограничивает типы, которые могут быть использованы в качестве полей типа <T>
   ///
-  ///Ожидается, что в виде шаблонного параметра <T> будет передана запись, не содержащая динамичных полей, иначе целостность данных будет нарушена
-  ///Это значит, что поля записи T и всех вложенных записей - НЕ могут быть:
-  ///  -Указатели
-  ///  -Ссылочных типов (то есть классами)
-  ///  -Особых типов, которые .Net считает "опасными". Как char или System.DateTime
+  ///Это значит, что поля записи T и всех вложенных записей не могут быть следующих типов: 
+  /// - Указателями 
+  /// - Ссылочными типами (классами / динамическими массивами) 
+  /// - Особоопасными в .NET типами. Например, char и System.DateTime
   ///Однако, эти ограничения можно обойти, об этом в справке
-  BlockFileOf<T>=class(BlockFileBase)
+  BlockFileOf<T> = class(BlockFileBase)
     
-    private class sz: integer;
+    private static sz: integer;
     
-    private class procedure TestForRefT(tt: System.Type);
+    private static procedure TestForRefT(tt: System.Type);
     begin
       if tt.IsClass then
       begin
@@ -78,7 +76,7 @@ type
             TestForRefT(fi.FieldType);
     end;
     
-    private class constructor :=
+    private static constructor :=
     try
       TestForRefT(typeof(T));
       
@@ -112,34 +110,34 @@ type
       end;
     end;
     
-    private function GetName:string;
-    private function GetFullName:string;
+    private function GetName: string;
+    private function GetFullName: string;
     
-    private function GetExists:boolean;
+    private function GetExists: boolean;
     
-    private function GetFileSize:int64 := (GetByteFileSize - _offset) div sz;
-    private procedure SetFileSize(size:int64) := SetByteFileSize(_offset + size*sz);
+    private function GetFileSize: int64 := (GetByteFileSize - _offset) div sz;
+    private procedure SetFileSize(size: int64) := SetByteFileSize(_offset + size*sz);
     
-    private function GetByteFileSize:int64;
-    private procedure SetByteFileSize(size:int64);
+    private function GetByteFileSize: int64;
+    private procedure SetByteFileSize(size: int64);
     
-    private function GetPos:int64 := (GetPosByte-_offset) div sz;
-    private procedure SetPos(pos:int64) := SetPosByte(_offset + pos*sz);
-    private function GetPosByte:int64;
-    private procedure SetPosByte(pos:int64);
+    private function GetPos: int64 := (GetPosByte-_offset) div sz;
+    private procedure SetPos(pos: int64) := SetPosByte(_offset + pos*sz);
+    private function GetPosByte: int64;
+    private procedure SetPosByte(pos: int64);
     
-    private function InternalReadLazy(c:integer; start_pos:int64):sequence of T;
+    private function InternalReadLazy(c: integer; start_pos: int64):sequence of T;
     
     ///Инициализирует переменную файла, не привязывая её к файлу на диске
     public constructor := exit;
     
     ///Инициализирует переменную файла, привязывая её к файлу с именем fname
-    public constructor(fname:string) :=
+    public constructor(fname: string) :=
     Assign(fname);
     
     ///Инициализирует переменную файла, привязывая её к файлу с именем fname
     ///Устанавливает значение смещения от начала в байтах на offset
-    public constructor(fname:string; offset:int64) :=
+    public constructor(fname: string; offset: int64) :=
     Assign(fname, offset);
     
     ///- constructor BlockFileOf<>(f:BlockFileOf<>);
@@ -367,7 +365,7 @@ implementation
 
 {$region Linking}
 
-procedure BlockFileBase.Link(f:BlockFileBase);
+procedure BlockFileBase.Link(f: BlockFileBase);
 begin
   
   if f.str = nil then raise new FileNotOpenedException($'{f.fi.FullName}, чью переменную передали в конструктор BlockFileOf<T>,');
