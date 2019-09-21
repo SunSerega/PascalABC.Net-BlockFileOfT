@@ -370,11 +370,11 @@ type
   end;
   FileNotClosedException = class(Exception)
     constructor(fname:string) :=
-    inherited Create($'Файл {fname} открыт, закройте его методом Close перед тем как продолжать');
+    inherited Create($'Файл {fname} открыт, закройте его методом Close перед тем как продолжить');
   end;
   CannotReadAfterEOF = class(Exception)
     constructor :=
-    inherited Create($'Нельзя читать за пределами файла');
+    inherited Create($'Нельзя читать после конца потока');
   end;
 
 {$endregion Exception's}

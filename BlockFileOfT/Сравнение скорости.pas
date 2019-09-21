@@ -1,8 +1,8 @@
 ﻿uses BlockFileOfT;
 
-// Эта процедура позволяет копировать память между содержимым массивов и другим массивом/стеком
+// Эта процедура позволяет копировать память между содержимым массива и другим массивом/стеком
 // При этом не волнуясь о блокировках массивов в памяти
-// Если элемент массива передан как var-параметр - сборщик мусора не трогает этот массив
+// Если элемент массива передан как var-параметр, то сборщик мусора не трогает этот массив
 procedure CopyMem<T1,T2>(var o1: T1; var o2: T2; count: integer) :=
 System.Buffer.MemoryCopy(
   @o1, @o2,
@@ -17,9 +17,9 @@ type
   
   
   // Size контролирует размер записи. Его можно не указывать, тогда его выберет автоматически
-  // В нашем случае надо 1 байт для поля length
-  // А затем место под 255 символов (масимум сколько может хранить эта строка)
-  // При этом каждый символ занимает 2 байта в памяти
+  // В нашем случае нужен один байт для поля length
+  // А затем место под 255 символов (масимум, который может хранить эта строка)
+  // При этом каждый символ занимает два байта в памяти
   [StructLayout(LayoutKind.&Explicit, Size= 1 + 255*2 )]
   ValueString255 = record	
     public [FieldOffset(0)] length: byte;	
@@ -27,14 +27,14 @@ type
     
     public const MaxLength = 255;
     
-    // operator explicit принимающий array of char и возвращающуй ValueString255 выглядит в коде как:
+    // operator explicit, принимающий array of char и возвращающий ValueString255 выглядит в коде как:
     // var s := ValueString255(a);
-    // Где у "a" тип array of char
+    // Где тип у "a" — array of char
     public static function operator explicit(a: array of char): ValueString255;
     begin
-      Result.length := Min(MaxLength, a.Length); // если a.Length>MaxLength - length надо обрезать до MaxLength
+      Result.length := Min(MaxLength, a.Length); // если a.Length>MaxLength, то length надо обрезать до MaxLength
       if Result.length=0 then exit; // иначе упадёт a[0]
-      CopyMem(a[0], Result.body, Result.length*2); // char занимает 2 байта, поэтому копируем length*2
+      CopyMem(a[0], Result.body, Result.length*2); // char занимает два байта, поэтому копируем length*2
     end;
     
     public static function operator explicit(s: string): ValueString255;
@@ -71,7 +71,7 @@ type
     s: string[255];
     
     //dt: DateTime; // Не даёт ¯\_(ツ)_/¯
-    dt: int64; // Ну и ладно, в System.DateTime всё хранится в 1 поле типа int64
+    dt: int64; // Ну и ладно, в System.DateTime всё хранится в одном поле типа int64
     
     i: integer;
     ch: char;
@@ -80,18 +80,18 @@ type
   ///Это будет сохранять в BlockFileOf<T>
   BR = record
     s: ValueString255;
-    dt: DateTime; // А BlockFileOf<T> принимает любые размерные типы без глупых ограничений
+    dt: DateTime; // А BlockFileOf<T> принимает любые размерные типы без ограничений
     i: integer;
     ch: char;
     b: byte;
   end;
   
-  ///Этот тип для ввода/вывода
-  ///В нём хранятся входные данные общие и для file of T, и для BlockFileOf<T>
+  ///Это тип для ввода/вывода
+  ///В нём хранятся входные данные, общие и для file of T, и для BlockFileOf<T>
   ///Тут же описаны и преобразования всех особых типов
-  ///Заметьте, преобразование string[255] к string и назад - ничего не копирует и не преобразовывает, если изначальная строка уже была <= 255 символов
+  ///Заметьте, преобразование string[255] к string и назад ничего не копирует и не преобразовывает, если изначальная строка уже была <= 255 символов
   ///Поэтому преобразования между ValueString255 и string работают медленнее
-  ///И даже при этом - BlockFileOf<T> всё равно быстрее
+  ///И даже при этом BlockFileOf<T> всё равно быстрее
   IOR = record
     s: string;
     dt: System.DateTime;
@@ -224,10 +224,10 @@ end;
 procedure TestSpeed;
 begin
   
-  var sw := new System.Diagnostics.Stopwatch;//точнее чем этим замерить невозможно
+  var sw := new System.Diagnostics.Stopwatch;//точнее, чем этим, замерить невозможно
   var lc := 10;
-  var ec := 10000;//Чем больше элементов - тем больше преимущество BlockFileOf<T>, потому что он сохраняет их всех сразу.
-                  //Но он быстрее даже если сохранять по 1 элементу
+  var ec := 10000;//Чем больше элементов, тем больше преимущество BlockFileOf<T>, потому что он сохраняет их всех сразу.
+                  //Но он быстрее даже если сохранять по одному элементу
   var t1, t2: int64;
   
   var f1: file of AR;
@@ -277,7 +277,7 @@ begin
 end;
 
 begin
-  // Уберите флажок "Debug версия" в "Сервис>>Настройки>>Опции компиляции" и запускайте по Shift+F9, иначе дебаг может неравномерно влиять на результаты
+  // Уберите флажок "Debug версия" в "Сервис>>Настройки>>Опции компиляции" и запускайте по Shift+F9, иначе отладка может неравномерно влиять на результаты
   
   // Тест на отсутствие ошибок. Можно убрать
   TestIntegrity;
