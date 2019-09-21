@@ -57,12 +57,16 @@ type
     ///Устанавливает значение элементов начиная с элемента from и длиной count
     public property SectionLazy64[from, count: int64]: sequence of T read GetSectionLazy64 write SetSectionLazy64;
     
+    
+    
     ///Очищает кэш чтения/записи
     public procedure Flush := f.BaseStream.Flush;
     
+    
     ///Создаёт новый массив, хранящий данные в файле fname. Если его нет - создаёт новый
-    public constructor(fname: string):= Create(fname, System.IO.FileMode.OpenOrCreate);
-  
+    public constructor(fname: string) :=
+    Create(fname, System.IO.FileMode.OpenOrCreate);
+    
     ///Создаёт новый массив хранящий данные в файле fname.
     ///mode указывает каким образом открывать/создавать файл и имеет тип System.IO.FileMode
     public constructor(fname: string; mode: System.IO.FileMode);
@@ -70,7 +74,7 @@ type
       f := new BlockFileOf<T>(fname);
       f.Open(mode);
     end;
-  
+    
     ///Использует заданный файл как основу для массива
     ///Если файл не открыт - его откроет в режиме System.IO.FileMode.OpenOrCreate
     public constructor(&file: BlockFileOf<T>);
@@ -79,14 +83,14 @@ type
       if not f.Opened then
         f.Open(System.IO.FileMode.OpenOrCreate);
     end;
-  
+    
     ///Открывает заданный файл в режиме mode и использует его как основу для массива
     public constructor(&file: BlockFileOf<T>; mode: System.IO.FileMode);
     begin
       f := &file;
       f.Open(mode);
     end;
-  
+    
     /// Создаёт новый массив хранящий данные в новом временном файл (в системной папке)
     /// Созданный файл будет удалён в произвольное время после окончания использования переменной или при вызове Finalize
     public constructor;
@@ -94,7 +98,7 @@ type
       Create(System.IO.Path.GetTempFileName, System.IO.FileMode.CreateNew);
       DeleteOnExit := true;
     end;
-  
+    
     ///Выполняет необходимую очистку при завершении работы с переменной
     ///Этот метод выполнится автоматически в произвольное время (после окончания использования переменной)
     ///Если попытаться использовать переменную после вызова этого метода - поведение будет неопределённым
@@ -103,9 +107,9 @@ type
       f.Close;
       if DeleteOnExit then f.Delete;
     end;
-
-end;
-
+    
+  end;
+  
 implementation
 
 {$region index property's}

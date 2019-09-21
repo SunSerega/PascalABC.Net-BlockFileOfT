@@ -109,7 +109,7 @@
 				<br><t style="margin-left: 00px">																										</t>
 				<br><t style="margin-left: 00px">end.																									</t>
 			</p>
-			В случае с "BlockFileOf&ltT>" все 5 элементов читаются одним блоком из памяти.<br>
+			В случае с "BlockFileOf&ltT>" все 5 элементов читаются одним блоком памяти.<br>
 			В то время как "file of T" читает по одному элементу.<br>
 			<hr />
 		</div>
@@ -182,8 +182,18 @@
 				<br><t style="margin-left: 00px">																										</t>
 				<br><t style="margin-left: 00px">end.																									</t>
 			</p>
+			"AsSeq := blocks.SelectMany(bl->bl)" здесь делает так, что хоть всё считывается из файла блоками,<br>
+			переменную "AsSeq" будет воспринимать как последовательность элементов, а не последовательность блоков.<br>
+			И - я расписал вывод как 3 строчки чтоб было виднее. Можно и сократить:
+			<p class=code_block>
+					<t style="margin-left: 10px">f.Reset;																								</t>
+				<br><t style="margin-left: 10px">f.ToSeqBlocks.SelectMany(bl->bl).Print;																</t>
+				<br><t style="margin-left: 10px">f.Close;																								</t>
+			</p>
 			<hr />
 		</div>
+		
+		
 		
 		<p onClick="toggle_show('bfo_record')"><font size="4" color="008000" style="cursor: pointer">Основное преимущество: сохранение записей (record)</font></p>
 		<div id=bfo_record style="display: none">

@@ -224,7 +224,7 @@ end;
 procedure TestSpeed;
 begin
   
-  var sw := new System.Diagnostics.Stopwatch;//точнее, чем этим, замерить невозможно
+  var sw := new System.Diagnostics.Stopwatch; // Точнее, чем этим, замерить невозможно
   var lc := 10;
   var ec := 10000;//Чем больше элементов, тем больше преимущество BlockFileOf<T>, потому что он сохраняет их всех сразу.
                   //Но он быстрее даже если сохранять по одному элементу

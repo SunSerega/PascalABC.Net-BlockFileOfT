@@ -1,6 +1,6 @@
 ﻿uses BlockFileOfT;
 
-uses System.Runtime.InteropServices;// для StructLayout у r3
+uses System.Runtime.InteropServices; // для StructLayout у r3
 
 type
   r1 = record
@@ -15,7 +15,7 @@ type
     ///Переопределение того - как объекты типа r1 будет выписывать writeln
     function ToString: string; override :=
     $'r1({b1}, {b2})';
-  
+    
   end;
   
   r2 = record
